@@ -1,0 +1,108 @@
+datasource postgres {
+  provider = "postgresql"
+  url      = env("POSTGRESQL_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator prismaCRUDGenerator {
+  provider = "npx prisma-generator-crud"
+  output   = "./generated"
+}
+
+model AppConfig {
+  id        String    @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+  value     String?
+  key       String?   @unique
+}
+
+model User {
+  id                String             @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime?          @updatedAt
+  deletedAt         DateTime?
+  firstName         String?
+  lastName          String?
+  username          String             @unique
+  password          String?
+  isValid           Boolean?
+  roles             String[]
+  email             String?            @unique
+  annonce           Annonce[]
+  interactions      Interaction[]
+  interactionUsers  InteractionUser[]  @relation(name: "interactionUsers")
+  interactionUsers2 InteractionUser[]  @relation(name: "interactionUsers2")
+  userType          EnumUserUserType[]
+}
+
+model Annonce {
+  id           String                  @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime?               @updatedAt
+  deletedAt    DateTime?
+  title        String?
+  content      String?
+  endDate      DateTime?
+  annonceType  EnumAnnonceAnnonceType?
+  longitude    Float?
+  latitude     Float?
+  users        User?                   @relation(fields: [usersId], references: [id])
+  usersId      String?                 @unique @default(dbgenerated("requesting_user_id()"))
+  interactions Interaction[]
+}
+
+model Interaction {
+  id              String                           @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt       DateTime                         @default(now())
+  updatedAt       DateTime?                        @updatedAt
+  deletedAt       DateTime?
+  interactionType EnumInteractionInteractionType[]
+  user            User?                            @relation(fields: [userId], references: [id])
+  userId          String?                          @default(dbgenerated("requesting_user_id()"))
+  annonce         Annonce?                         @relation(fields: [annonceId], references: [id])
+  annonceId       String?
+}
+
+model InteractionUser {
+  id              String                               @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt       DateTime                             @default(now())
+  updatedAt       DateTime?                            @updatedAt
+  deletedAt       DateTime?
+  interactionType EnumInteractionUserInteractionType[]
+  date            DateTime?
+  status          String?
+  user2           User?                                @relation(name: "interactionUsers", fields: [user2Id], references: [id])
+  user2Id         String?                              @unique @default(dbgenerated("requesting_user_id()"))
+  users           User?                                @relation(name: "interactionUsers2", fields: [usersId], references: [id])
+  usersId         String?                              @unique @default(dbgenerated("requesting_user_id()"))
+}
+
+enum EnumUserUserType {
+  Regular
+  Pro
+}
+
+enum EnumAnnonceAnnonceType {
+  Pub
+  Alert
+  Imm
+  Pro
+  Recommend
+}
+
+enum EnumInteractionInteractionType {
+  Like
+  Report
+  Comment
+}
+
+enum EnumInteractionUserInteractionType {
+  Appointment
+  Connect
+  Message
+}
